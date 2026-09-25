@@ -1,0 +1,1 @@
+alter table audit_logs alter column metadata type text using metadata::text;

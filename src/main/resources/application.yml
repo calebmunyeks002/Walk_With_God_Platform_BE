@@ -1,0 +1,57 @@
+spring:
+  application:
+    name: walk-with-god-api
+  datasource:
+    url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/walkwithgod}
+    username: ${DATABASE_USERNAME:postgres}
+    password: ${DATABASE_PASSWORD:postgres}
+    hikari:
+      maximum-pool-size: ${DB_POOL_SIZE:30}
+      minimum-idle: 5
+      connection-timeout: 30000
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: UTC
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    clean-disabled: false
+    baseline-on-migrate: true
+    baseline-version: 0
+    validate-on-migrate: true
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: inukatrust.demo@gmail.com
+    password: okcmqkfmnwonoreo
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+server:
+  port: ${PORT:8080}
+  forward-headers-strategy: framework
+app:
+  jwt:
+    secret: ${JWT_SECRET:change-this-development-secret-to-a-long-random-value-at-least-32-bytes}
+    expiration-minutes: ${JWT_EXPIRATION_MINUTES:30}
+  frontend-url: ${FRONTEND_URL:http://localhost:4200}
+  bible:
+    api-url: ${BIBLE_API_URL:https://rest.api.bible/v1}
+    api-key: ${BIBLE_API_KEY:}
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      probes:
+        enabled: true

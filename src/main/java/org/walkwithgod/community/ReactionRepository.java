@@ -1,0 +1,1 @@
+package org.walkwithgod.community;import org.springframework.data.jpa.repository.JpaRepository;import java.util.*;public interface ReactionRepository extends JpaRepository<Reaction,UUID>{Optional<Reaction> findByUserIdAndPostId(UUID userId,UUID postId);long countByPostId(UUID postId);}

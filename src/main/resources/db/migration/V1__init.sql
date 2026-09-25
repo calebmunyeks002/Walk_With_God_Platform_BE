@@ -1,0 +1,22 @@
+create table users (id uuid primary key, created_at timestamptz not null, name varchar(120) not null, email varchar(190) not null unique, password_hash varchar(255) not null, role varchar(20) not null, avatar_url varchar(500), bio varchar(1000), enabled boolean not null default true);
+create index idx_users_role on users(role);
+create table posts (id uuid primary key, created_at timestamptz not null, author_id uuid not null references users(id), content varchar(5000) not null, scripture_reference varchar(160), image_url varchar(1000));
+create index idx_posts_created on posts(created_at); create index idx_posts_author on posts(author_id);
+create table reactions (id uuid primary key, created_at timestamptz not null, user_id uuid not null references users(id), post_id uuid not null references posts(id), type varchar(20) not null, constraint uk_reaction_user_post unique(user_id,post_id));
+create table mentor_profiles (id uuid primary key, created_at timestamptz not null, user_id uuid not null unique references users(id), denomination varchar(160), church varchar(200), bio varchar(1000), years_experience integer not null default 0, verified boolean not null default false, specialties varchar(1000), rating double precision);
+create index idx_mentor_verified on mentor_profiles(verified);
+create table mentor_applications (id uuid primary key, created_at timestamptz not null, applicant_id uuid not null references users(id), qualifications varchar(2000) not null, organization varchar(300), years_experience integer not null default 0, document_url varchar(1000), status varchar(20) not null);
+create index idx_ma_status on mentor_applications(status);
+create table mentor_requests (id uuid primary key, created_at timestamptz not null, member_id uuid not null references users(id), mentor_id uuid not null references mentor_profiles(id), status varchar(20) not null, message varchar(2000));
+create index idx_mr_member on mentor_requests(member_id); create index idx_mr_mentor on mentor_requests(mentor_id);
+create table conversations (id uuid primary key, created_at timestamptz not null, title varchar(500));
+create table conversation_participants (conversation_id uuid not null references conversations(id) on delete cascade, user_id uuid not null references users(id) on delete cascade, primary key(conversation_id,user_id));
+create table messages (id uuid primary key, created_at timestamptz not null, conversation_id uuid not null references conversations(id) on delete cascade, sender_id uuid not null references users(id), content varchar(5000) not null, read boolean not null default false);
+create index idx_messages_conversation_created on messages(conversation_id,created_at);
+create table devotions (id uuid primary key, created_at timestamptz not null, title varchar(240) not null, scripture varchar(160) not null, body varchar(15000) not null, author_id uuid not null references users(id), published boolean not null default true, published_at timestamptz not null);
+create index idx_devotions_published on devotions(published_at);
+create table trivia_questions (id uuid primary key, created_at timestamptz not null, question varchar(1000) not null, options_json varchar(3000) not null, answer_index integer not null, explanation varchar(1000), difficulty varchar(20) not null);
+create index idx_trivia_difficulty on trivia_questions(difficulty);
+
+create table comments (id uuid primary key, created_at timestamptz not null, post_id uuid not null references posts(id) on delete cascade, author_id uuid not null references users(id), content varchar(2000) not null);
+create index idx_comments_post_created on comments(post_id,created_at);

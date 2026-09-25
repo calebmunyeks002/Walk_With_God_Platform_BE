@@ -1,0 +1,15 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/walkwithgod
+    username: postgres
+    password: CHANGE_ME
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: YOUR_EMAIL@gmail.com
+    password: YOUR_APP_PASSWORD
+app:
+  jwt:
+    secret: change-this-to-a-long-random-string-at-least-32-bytes
+  bible:
+    api-key: YOUR_API_BIBLE_KEY
