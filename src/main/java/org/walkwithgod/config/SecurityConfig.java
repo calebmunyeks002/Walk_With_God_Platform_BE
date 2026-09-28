@@ -75,6 +75,7 @@ public class SecurityConfig {
                     "/actuator/info",
                     "/swagger-ui/**",
                     "/swagger-ui.html",
+                    "/api/media/*/raw",
                     "/v3/api-docs/**"
                 ).permitAll()
                 // Everything else requires a valid JWT

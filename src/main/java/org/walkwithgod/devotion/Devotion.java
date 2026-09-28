@@ -151,4 +151,15 @@ public class Devotion extends BaseEntity {
     public void setUpdatedAt(Instant v) {
         updatedAt = v;
     }
+
+    @Column(name = "system_generated", nullable = false)
+    private boolean systemGenerated = false;
+
+    public boolean isSystemGenerated() {
+        return systemGenerated;
+    }
+
+    public void setSystemGenerated(boolean v) {
+        systemGenerated = v;
+    }
 }

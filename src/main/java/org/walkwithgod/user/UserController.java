@@ -19,28 +19,24 @@ public class UserController {
         users = u;
     }
 
-    public record Update(
-        @NotBlank @Size(max = 120) String name,
-        @Size(max = 1000) String bio
-    ) {}
+    /** Only `bio` is user-editable. Name and email are locked. */
+    public record Update(@Size(max = 1000) String bio) {
+    }
 
     @PutMapping("/me")
     public AuthDtos.UserView update(
-        @Valid @RequestBody Update r,
-        @AuthenticationPrincipal Jwt jwt
-    ) {
+            @Valid @RequestBody Update r,
+            @AuthenticationPrincipal Jwt jwt) {
         AppUser u = users.findById(UUID.fromString(jwt.getSubject())).orElseThrow();
-        u.setName(r.name());
         u.setBio(r.bio());
         users.save(u);
         return new AuthDtos.UserView(
-            u.getId().toString(),
-            u.getName(),
-            u.getEmail(),
-            u.getRole(),
-            u.getAvatarUrl(),
-            u.getBio(),
-            u.getCreatedAt().toString()
-        );
+                u.getId().toString(),
+                u.getName(),
+                u.getEmail(),
+                u.getRole(),
+                u.getAvatarUrl(),
+                u.getBio(),
+                u.getCreatedAt().toString());
     }
 }

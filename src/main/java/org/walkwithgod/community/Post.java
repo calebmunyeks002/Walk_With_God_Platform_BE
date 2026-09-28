@@ -11,7 +11,8 @@ import java.util.UUID;
 @Table(name = "posts", indexes = {
         @Index(name = "idx_posts_created", columnList = "createdAt"),
         @Index(name = "idx_posts_author", columnList = "author_id"),
-        @Index(name = "idx_posts_hidden", columnList = "hidden")
+        @Index(name = "idx_posts_hidden", columnList = "hidden"),
+        @Index(name = "idx_posts_type", columnList = "type")
 })
 public class Post extends BaseEntity {
 
@@ -28,6 +29,13 @@ public class Post extends BaseEntity {
     @Column(name = "image_url", length = 1000)
     private String imageUrl;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    private PostType type = PostType.NORMAL;
+
+    @Column(name = "shared_from_id")
+    private UUID sharedFromId;
+
     // --- moderation ---
 
     @Column(nullable = false)
@@ -39,8 +47,26 @@ public class Post extends BaseEntity {
     @Column(name = "hidden_at")
     private Instant hiddenAt;
 
+    @Column(name = "community_id")
+    private UUID communityId;
+    public UUID getCommunityId() {
+        return communityId; }
+    public void setCommunityId(UUID v) {
+        communityId = v; }
+
     @Column(name = "hidden_by")
     private UUID hiddenBy;
+
+    @Column(name = "media_id")
+    private UUID mediaId;
+
+    public UUID getMediaId() {
+        return mediaId;
+    }
+
+    public void setMediaId(UUID v) {
+        mediaId = v;
+    }
 
     // --- getters / setters ---
 
@@ -74,6 +100,22 @@ public class Post extends BaseEntity {
 
     public void setImageUrl(String v) {
         imageUrl = v;
+    }
+
+    public PostType getType() {
+        return type;
+    }
+
+    public void setType(PostType v) {
+        type = v;
+    }
+
+    public UUID getSharedFromId() {
+        return sharedFromId;
+    }
+
+    public void setSharedFromId(UUID v) {
+        sharedFromId = v;
     }
 
     public boolean isHidden() {

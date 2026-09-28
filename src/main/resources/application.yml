@@ -55,3 +55,12 @@ management:
     health:
       probes:
         enabled: true
+
+  app:
+  media:
+    storage-root: ${MEDIA_STORAGE_ROOT:./uploads}
+    max-image-bytes: 10485760        # 10 MB
+    max-video-bytes: 26214400        # 25 MB
+    max-video-seconds: 60
+    min-image-dimension: 100
+    max-image-dimension: 8000

@@ -14,13 +14,9 @@ public class DevotionController {
     }
 
     public record View(
-            String id,
-            String title,
-            String scripture,
-            String body,
-            String author,
-            boolean featured,
-            String publishedAt) {
+                    String id, String title, String scripture, String body,
+                    String author, boolean featured, boolean systemGenerated,
+                    String publishedAt) {
     }
 
     @GetMapping
@@ -34,6 +30,7 @@ public class DevotionController {
                         d.getBody(),
                         d.getAuthor().getName(),
                         d.isFeatured(),
+                        d.isSystemGenerated(),
                         d.getPublishedAt().toString()))
                 .toList();
     }
@@ -48,6 +45,7 @@ public class DevotionController {
                 d.getBody(),
                 d.getAuthor().getName(),
                 d.isFeatured(),
+                d.isSystemGenerated(),
                 d.getPublishedAt().toString());
     }
 
@@ -61,6 +59,7 @@ public class DevotionController {
                         d.getBody(),
                         d.getAuthor().getName(),
                         true,
+                        d.isSystemGenerated(),
                         d.getPublishedAt().toString()))
                 .orElse(null);
     }
