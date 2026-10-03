@@ -2,12 +2,12 @@ spring:
   application:
     name: walk-with-god-api
   datasource:
-    url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/walkwithgod}
+    url: jdbc:postgresql://${DATABASE_HOST:localhost}:${DATABASE_PORT:5432}/${DATABASE_NAME:walkwithgod}
     username: ${DATABASE_USERNAME:postgres}
     password: ${DATABASE_PASSWORD:postgres}
     hikari:
-      maximum-pool-size: ${DB_POOL_SIZE:30}
-      minimum-idle: 5
+      maximum-pool-size: ${DB_POOL_SIZE:10}
+      minimum-idle: 2
       connection-timeout: 30000
   jpa:
     hibernate:
@@ -25,19 +25,21 @@ spring:
     baseline-version: 0
     validate-on-migrate: true
   mail:
-    host: smtp.gmail.com
-    port: 587
-    username: inukatrust.demo@gmail.com
-    password: okcmqkfmnwonoreo
+    host: ${MAIL_HOST:smtp.gmail.com}
+    port: ${MAIL_PORT:587}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
     properties:
       mail:
         smtp:
           auth: true
           starttls:
             enable: true
+
 server:
   port: ${PORT:8080}
   forward-headers-strategy: framework
+
 app:
   jwt:
     secret: ${JWT_SECRET:change-this-development-secret-to-a-long-random-value-at-least-32-bytes}
@@ -46,6 +48,14 @@ app:
   bible:
     api-url: ${BIBLE_API_URL:https://rest.api.bible/v1}
     api-key: ${BIBLE_API_KEY:}
+  media:
+    storage-root: ${MEDIA_STORAGE_ROOT:./uploads}
+    max-image-bytes: ${MEDIA_MAX_IMAGE_BYTES:10485760}
+    max-video-bytes: ${MEDIA_MAX_VIDEO_BYTES:26214400}
+    max-video-seconds: ${MEDIA_MAX_VIDEO_SECONDS:60}
+    min-image-dimension: ${MEDIA_MIN_IMAGE_DIM:100}
+    max-image-dimension: ${MEDIA_MAX_IMAGE_DIM:8000}
+
 management:
   endpoints:
     web:
@@ -55,12 +65,3 @@ management:
     health:
       probes:
         enabled: true
-
-  app:
-  media:
-    storage-root: ${MEDIA_STORAGE_ROOT:./uploads}
-    max-image-bytes: 10485760        # 10 MB
-    max-video-bytes: 26214400        # 25 MB
-    max-video-seconds: 60
-    min-image-dimension: 100
-    max-image-dimension: 8000
