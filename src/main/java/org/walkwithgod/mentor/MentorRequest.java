@@ -37,6 +37,51 @@ public class MentorRequest extends BaseEntity {
     @Column(name = "completed_at")
     private Instant completedAt;
 
+    @Column(name = "accepted_at")
+    private java.time.Instant acceptedAt;
+
+    @Column(name = "declined_at")
+    private java.time.Instant declinedAt;
+
+    @Column(name = "ended_at")
+    private java.time.Instant endedAt;
+
+    @Column(name = "end_reason", length = 500)
+    private String endReason;
+
+    // getters/setters
+    public java.time.Instant getAcceptedAt() {
+        return acceptedAt;
+    }
+
+    public void setAcceptedAt(java.time.Instant v) {
+        acceptedAt = v;
+    }
+
+    public java.time.Instant getDeclinedAt() {
+        return declinedAt;
+    }
+
+    public void setDeclinedAt(java.time.Instant v) {
+        declinedAt = v;
+    }
+
+    public java.time.Instant getEndedAt() {
+        return endedAt;
+    }
+
+    public void setEndedAt(java.time.Instant v) {
+        endedAt = v;
+    }
+
+    public String getEndReason() {
+        return endReason;
+    }
+
+    public void setEndReason(String v) {
+        endReason = v;
+    }
+
     // --- getters / setters ---
 
     public AppUser getMember() {

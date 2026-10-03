@@ -20,7 +20,6 @@ import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
@@ -38,6 +37,7 @@ public class MentorController {
         private final UserRepository users;
         private final AuditService audit;
         private final NotificationService notifications;
+        private final MentorRequestService mentorRequestService;
 
         public MentorController(
                         MentorProfileRepository mentors,
@@ -45,13 +45,15 @@ public class MentorController {
                         MentorApplicationRepository applications,
                         UserRepository users,
                         AuditService audit,
-                        NotificationService notifications) {
+                        NotificationService notifications,
+                        MentorRequestService mentorRequestService) {
                 this.mentors = mentors;
                 this.requests = requests;
                 this.applications = applications;
                 this.users = users;
                 this.audit = audit;
                 this.notifications = notifications;
+                this.mentorRequestService = mentorRequestService;
         }
 
         /*
@@ -69,12 +71,9 @@ public class MentorController {
                         String bio,
                         int yearsExperience,
                         boolean verified,
-                        Double rating) {
-        }
-
-        public record RequestDto(
-                        @NotBlank String mentorId,
-                        @Size(max = 2000) String message) {
+                        Double rating,
+                        boolean isMyMentor,
+                        String mentorshipStatus) {
         }
 
         public record ApplicationDto(
@@ -102,56 +101,64 @@ public class MentorController {
 
         /*
          * =========================================================
-         * Public — mentor directory
+         * Public — mentor directory (with exclusivity info)
          * =========================================================
          */
 
         @GetMapping("/mentors")
-        public List<MentorView> list() {
-                return mentors.findByVerifiedTrueOrderByRatingDesc()
-                                .stream()
-                                .map(this::view)
+        public List<MentorView> list(@AuthenticationPrincipal Jwt jwt) {
+                UUID uid = UUID.fromString(jwt.getSubject());
+
+                MentorRequest active = mentorRequestService.getActiveForMember(uid);
+                UUID myMentorUserId = null;
+                String status = null;
+
+                if (active != null
+                                && active.getMentor() != null
+                                && active.getMentor().getUser() != null) {
+                        myMentorUserId = active.getMentor().getUser().getId();
+                        status = active.getStatus();
+                }
+
+                final UUID finalMyMentorUserId = myMentorUserId;
+                final String finalStatus = status;
+
+                return mentors.findByVerifiedTrueOrderByRatingDesc().stream()
+                                .map(m -> {
+                                        boolean isMine = finalMyMentorUserId != null
+                                                        && m.getUser() != null
+                                                        && m.getUser().getId().equals(finalMyMentorUserId);
+
+                                        String[] specialties = m.getSpecialties() == null
+                                                        ? new String[0]
+                                                        : Arrays.stream(m.getSpecialties().split(","))
+                                                                        .map(String::trim)
+                                                                        .filter(s -> !s.isEmpty())
+                                                                        .toArray(String[]::new);
+
+                                        return new MentorView(
+                                                        m.getId().toString(),
+                                                        toUserView(m.getUser()),
+                                                        m.getDenomination(),
+                                                        m.getChurch(),
+                                                        specialties,
+                                                        m.getBio(),
+                                                        m.getYearsExperience(),
+                                                        m.isVerified(),
+                                                        m.getRating(),
+                                                        isMine,
+                                                        finalStatus);
+                                })
                                 .toList();
         }
 
         /*
          * =========================================================
-         * Member — request a mentor
+         * NOTE: POST /api/mentor-requests is now handled by
+         * MentorRequestController.send() — which enforces the
+         * A1 exclusivity rule (one mentor per member).
          * =========================================================
          */
-
-        @PostMapping("/mentor-requests")
-        public MentorRequest request(
-                        @Valid @RequestBody RequestDto r,
-                        @AuthenticationPrincipal Jwt jwt) {
-                MentorRequest x = new MentorRequest();
-                x.setMember(users.findById(UUID.fromString(jwt.getSubject())).orElseThrow());
-                x.setMentor(mentors.findById(UUID.fromString(r.mentorId())).orElseThrow());
-                x.setMessage(r.message());
-                x.setStatus(MentorRequestStatus.PENDING);
-
-                MentorRequest saved = requests.save(x);
-
-                // Notify the mentor
-                notifications.create(
-                                x.getMentor().getUser().getId(),
-                                x.getMember().getId(),
-                                NotificationType.MENTOR_REQUEST,
-                                "New mentorship request from " + x.getMember().getName(),
-                                r.message() == null || r.message().isBlank()
-                                                ? "They'd like you to mentor them."
-                                                : r.message(),
-                                "/mentor/requests",
-                                true);
-
-                audit.record(
-                                AuditAction.MENTOR_REQUEST_SENT,
-                                "MENTOR_REQUEST",
-                                saved.getId(),
-                                "Request to mentor " + x.getMentor().getId());
-
-                return saved;
-        }
 
         /*
          * =========================================================
@@ -244,7 +251,6 @@ public class MentorController {
 
                         mentors.save(profile);
 
-                        // Notify the newly-approved mentor
                         notifications.create(
                                         user.getId(),
                                         null,
@@ -261,7 +267,6 @@ public class MentorController {
                                         "Approved — user promoted to MENTOR" +
                                                         (body.reason() != null ? " — " + body.reason() : ""));
                 } else if ("REJECTED".equals(status)) {
-                        // Notify the applicant
                         notifications.create(
                                         application.getApplicant().getId(),
                                         null,
@@ -334,40 +339,10 @@ public class MentorController {
                         @PathVariable UUID id,
                         @RequestBody(required = false) AcceptRequest body,
                         @AuthenticationPrincipal Jwt jwt) {
-                MentorProfile m = mentors.findByUserId(UUID.fromString(jwt.getSubject()))
-                                .orElseThrow();
 
-                MentorRequest r = requests.findById(id).orElseThrow();
-                if (!r.getMentor().getId().equals(m.getId())) {
-                        throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Not your request");
-                }
-                if (!MentorRequestStatus.PENDING.equals(r.getStatus())) {
-                        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Request already handled");
-                }
-
-                r.setStatus(MentorRequestStatus.ACCEPTED);
-                r.setRespondedAt(Instant.now());
-                r.setResponseNote(body != null ? body.note() : null);
-                requests.save(r);
-
-                // Notify the member
-                notifications.create(
-                                r.getMember().getId(),
-                                m.getUser().getId(),
-                                NotificationType.MENTOR_ACCEPTED,
-                                m.getUser().getName() + " accepted your mentorship request",
-                                body != null && body.note() != null && !body.note().isBlank()
-                                                ? body.note()
-                                                : "You can now message them anytime in your inbox.",
-                                "/inbox",
-                                true);
-
-                audit.record(
-                                AuditAction.MENTOR_REQUEST_ACCEPTED,
-                                "MENTOR_REQUEST",
-                                r.getId(),
-                                "Accepted mentee " + r.getMember().getEmail());
-
+                UUID actorId = UUID.fromString(jwt.getSubject());
+                MentorRequest r = mentorRequestService.accept(
+                                id, actorId, body != null ? body.note() : null);
                 return toRequestView(r);
         }
 
@@ -378,41 +353,10 @@ public class MentorController {
                         @PathVariable UUID id,
                         @RequestBody(required = false) DeclineRequest body,
                         @AuthenticationPrincipal Jwt jwt) {
-                MentorProfile m = mentors.findByUserId(UUID.fromString(jwt.getSubject()))
-                                .orElseThrow();
 
-                MentorRequest r = requests.findById(id).orElseThrow();
-                if (!r.getMentor().getId().equals(m.getId())) {
-                        throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Not your request");
-                }
-                if (!MentorRequestStatus.PENDING.equals(r.getStatus())) {
-                        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Request already handled");
-                }
-
-                r.setStatus(MentorRequestStatus.DECLINED);
-                r.setRespondedAt(Instant.now());
-                r.setResponseNote(body != null ? body.reason() : null);
-                requests.save(r);
-
-                // Notify the member
-                notifications.create(
-                                r.getMember().getId(),
-                                m.getUser().getId(),
-                                NotificationType.MENTOR_DECLINED,
-                                m.getUser().getName() + " couldn't take on new mentees right now",
-                                body != null && body.reason() != null && !body.reason().isBlank()
-                                                ? body.reason()
-                                                : "You can try another mentor from the directory.",
-                                "/mentors",
-                                false); // don't email a decline — less noise
-
-                audit.record(
-                                AuditAction.MENTOR_REQUEST_DECLINED,
-                                "MENTOR_REQUEST",
-                                r.getId(),
-                                "Declined mentee " + r.getMember().getEmail() +
-                                                (body != null && body.reason() != null ? " — " + body.reason() : ""));
-
+                UUID actorId = UUID.fromString(jwt.getSubject());
+                MentorRequest r = mentorRequestService.decline(
+                                id, actorId, body != null ? body.reason() : null);
                 return toRequestView(r);
         }
 
@@ -467,30 +411,12 @@ public class MentorController {
          * =========================================================
          */
 
-        private MentorView view(MentorProfile m) {
-                String[] specialties = m.getSpecialties() == null
-                                ? new String[0]
-                                : Arrays.stream(m.getSpecialties().split(","))
-                                                .map(String::trim)
-                                                .toArray(String[]::new);
-
-                return new MentorView(
-                                m.getId().toString(),
-                                toUserView(m.getUser()),
-                                m.getDenomination(),
-                                m.getChurch(),
-                                specialties,
-                                m.getBio(),
-                                m.getYearsExperience(),
-                                m.isVerified(),
-                                m.getRating());
-        }
-
         private MentorProfileView toProfileView(MentorProfile m) {
                 List<String> specialties = m.getSpecialties() == null
                                 ? List.of()
                                 : Arrays.stream(m.getSpecialties().split(","))
                                                 .map(String::trim)
+                                                .filter(s -> !s.isEmpty())
                                                 .toList();
 
                 return new MentorProfileView(
