@@ -14,14 +14,15 @@ RUN mvn -q -B -DskipTests package
 FROM eclipse-temurin:21-jre-jammy
 WORKDIR /app
 
-# Non-root user for security
-RUN useradd --system --uid 1001 appuser
-USER appuser
+# Create non-root user + uploads dir BEFORE switching users
+RUN useradd --system --uid 1001 appuser \
+    && mkdir -p /app/uploads \
+    && chown -R appuser:appuser /app
 
 COPY --from=build /app/target/walk-with-god-api-1.0.0.jar app.jar
 
-# Media storage directory (ephemeral on Render free tier)
-RUN mkdir -p /app/uploads
+# Now drop privileges
+USER appuser
 
 EXPOSE 8080
 
