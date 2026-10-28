@@ -59,6 +59,10 @@ public class AuthService {
         return issue(u);
     }
 
+    public AuthDtos.AuthResponse issueFor(AppUser u) {
+        return issue(u);
+    }
+
     public AuthDtos.UserView view(AppUser u) {
         return new AuthDtos.UserView(
                 u.getId().toString(),
@@ -78,7 +82,7 @@ public class AuthService {
                 .expiresAt(now.plus(Duration.ofMinutes(expiryMinutes)))
                 .claim("role", u.getRole().name())
                 .claim("email", u.getEmail())
-                .claim("name", u.getName()) // ← ADDED
+                .claim("name", u.getName()) // â† ADDED
                 .build();
 
         String token = jwt.encode(

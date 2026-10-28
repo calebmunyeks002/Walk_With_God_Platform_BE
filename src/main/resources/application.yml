@@ -41,7 +41,9 @@ server:
   forward-headers-strategy: framework
 
 app:
-  jwt:
+  supabase:
+    project-ref: zlwmruimtzxwnurejqpk
+    jwks-url: https://zlwmruimtzxwnurejqpk.supabase.co/auth/v1/.well-known/jwks.json  jwt:
     secret: ${JWT_SECRET:change-this-development-secret-to-a-long-random-value-at-least-32-bytes}
     expiration-minutes: ${JWT_EXPIRATION_MINUTES:30}
   frontend-url: ${FRONTEND_URL:http://localhost:4200}
