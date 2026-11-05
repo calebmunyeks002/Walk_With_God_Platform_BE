@@ -4,8 +4,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 
 @Component
+@ConditionalOnProperty(name = "app.trivia.generator-enabled", havingValue = "true")
 public class TriviaGeneratorScheduler {
 
     private static final Logger log = LoggerFactory.getLogger(TriviaGeneratorScheduler.class);
@@ -23,7 +25,7 @@ public class TriviaGeneratorScheduler {
     /** Runs every day at 3:00 AM server time. */
     @Scheduled(cron = "0 0 3 * * *", zone = "Africa/Nairobi")
     public void nightlyGenerate() {
-        log.info("Trivia nightly generation starting…");
+        log.info("Trivia nightly generation startingâ€¦");
         long easy = questions.countByHiddenFalseAndDifficulty("EASY");
         long medium = questions.countByHiddenFalseAndDifficulty("MEDIUM");
         long hard = questions.countByHiddenFalseAndDifficulty("HARD");
@@ -31,7 +33,7 @@ public class TriviaGeneratorScheduler {
 
         int created = generator.generateAll();
 
-        log.info("Trivia nightly generation finished — {} questions added", created);
+        log.info("Trivia nightly generation finished â€” {} questions added", created);
     }
 
     /** Ensure pools are seeded when the app starts (runs once after boot). */

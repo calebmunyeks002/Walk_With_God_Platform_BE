@@ -1,6 +1,8 @@
 spring:
   main:
-    lazy-initialization: true  application:
+    lazy-initialization: true
+    banner-mode: 'off'
+  application:
     name: walk-with-god-api
   datasource:
     url: jdbc:postgresql://${DATABASE_HOST:localhost}:${DATABASE_PORT:5432}/${DATABASE_NAME:walkwithgod}
@@ -38,13 +40,15 @@ spring:
             enable: true
 
 server:
-  # banner disabled for faster startup
   port: ${PORT:8080}
+  forward-headers-strategy: framework
   tomcat:
     max-connections: 100
-    accept-count: 50  forward-headers-strategy: framework
+    accept-count: 50
 
 app:
+  trivia:
+    generator-enabled: ${TRIVIA_GENERATOR_ENABLED:false}
   jwt:
     secret: ${JWT_SECRET:change-this-development-secret-to-a-long-random-value-at-least-32-bytes}
     expiration-minutes: ${JWT_EXPIRATION_MINUTES:30}
@@ -72,6 +76,3 @@ management:
     health:
       probes:
         enabled: true
-app:
-  trivia:
-    generator-enabled: ${TRIVIA_GENERATOR_ENABLED:false}
