@@ -5,6 +5,7 @@ import javax.crypto.spec.SecretKeySpec;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Primary;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -49,6 +50,7 @@ public class SecurityConfig {
                 .build();
     }
 
+    @Primary
     @Bean
     JwtDecoder jwtDecoder(SecretKey key) {
         NimbusJwtDecoder d = NimbusJwtDecoder.withSecretKey(key)
@@ -91,7 +93,7 @@ public class SecurityConfig {
         JwtAuthenticationConverter c = new JwtAuthenticationConverter();
         JwtGrantedAuthoritiesConverter g = new JwtGrantedAuthoritiesConverter();
         g.setAuthoritiesClaimName("role");    // JWT claim: "role": "ADMIN"
-        g.setAuthorityPrefix("ROLE_");        // → ROLE_ADMIN
+        g.setAuthorityPrefix("ROLE_");        // ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ ROLE_ADMIN
         c.setJwtGrantedAuthoritiesConverter(g);
         return c;
     }
