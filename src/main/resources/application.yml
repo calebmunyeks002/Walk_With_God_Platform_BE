@@ -21,7 +21,7 @@ spring:
         jdbc:
           time_zone: UTC
   flyway:
-    enabled: true
+    enabled: false
     locations: classpath:db/migration
     clean-disabled: false
     baseline-on-migrate: true
@@ -75,4 +75,4 @@ management:
   endpoint:
     health:
       probes:
-        enabled: true
+        enabled: false
